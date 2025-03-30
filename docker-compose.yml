@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   api:
-    image: ghcr.io/your-username/gold-api:latest
+    image: ghcr.io/root/gold-api:latest
     restart: always
     ports:
       - "8080:80"
@@ -10,7 +10,15 @@ services:
       - ASPNETCORE_ENVIRONMENT=Production
 
   admin:
-    image: ghcr.io/your-username/gold-admin:latest
+    image: ghcr.io/root/gold-admin:latest
     restart: always
     ports:
       - "8081:80"
+      
+  myapp:
+    build: .
+    ports:
+      - "${APP_PORT}:80"
+    env_file:
+      - .env
+
