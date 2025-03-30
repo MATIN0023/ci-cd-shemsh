@@ -8,6 +8,21 @@ on:
   workflow_dispatch:
 
 jobs:
+  deploy:
+     needs: build-and-push-docker
+     runs-on: ubuntu-latest
+     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+     steps:
+       - name: Deploy to production
+         uses: appleboy/ssh-action@master
+         with:
+           host: ${{ secrets.SSH_HOST }}
+           username: ${{ secrets.SSH_USERNAME }}
+           key: ${{ secrets.SSH_KEY }}
+           script: |
+             cd /path/to/deployment
+             docker-compose pull
+             docker-compose up -d
   build-and-test:
     runs-on: ubuntu-latest
     steps:
@@ -91,19 +106,3 @@ jobs:
           tags: ${{ steps.meta-admin.outputs.tags }}
           labels: ${{ steps.meta-admin.outputs.labels }}
 
-            # Uncomment and configure deployment job based on your hosting environment
-  deploy:
-     needs: build-and-push-docker
-     runs-on: ubuntu-latest
-     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-     steps:
-       - name: Deploy to production
-         uses: appleboy/ssh-action@master
-         with:
-           host: ${{ secrets.SSH_HOST }}
-           username: ${{ secrets.SSH_USERNAME }}
-           key: ${{ secrets.SSH_KEY }}
-           script: |
-             cd /path/to/deployment
-             docker-compose pull
-             docker-compose up -d
