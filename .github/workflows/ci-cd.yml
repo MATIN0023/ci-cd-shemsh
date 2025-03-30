@@ -26,6 +26,16 @@ jobs:
 
       - name: Test
         run: dotnet test --no-build --configuration Release --verbosity normal
+      - name: Install docker-compose
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker-compose
+
+      - name: Build and test Docker images
+        run: |
+          docker-compose -f docker-compose.yml up -d
+          sleep 10  # Wait for services to start
+          docker ps
 
   build-and-push-docker:
     needs: build-and-test
