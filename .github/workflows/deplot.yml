@@ -1,0 +1,103 @@
+name: Deploy to Production
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment to deploy to"
+        required: true
+        default: "staging"
+        type: choice
+        options:
+          - staging
+          - production
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event_name == 'workflow_dispatch' && inputs.environment || 'production' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set tag version
+        id: vars
+        run: |
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=latest" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create deployment directory on server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            mkdir -p ~/gold-app-${{ steps.vars.outputs.tag }}
+
+      - name: Transfer Docker Compose files
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          source: "docker-compose.yml,.env"
+          target: "~/gold-app-${{ steps.vars.outputs.tag }}"
+
+      - name: Create .env file
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd ~/gold-app-${{ steps.vars.outputs.tag }}
+            cat > .env << EOL
+            ASPNETCORE_ENVIRONMENT=${{ github.event_name == 'workflow_dispatch' && inputs.environment || 'production' }}
+            API_TAG=${{ steps.vars.outputs.tag }}
+            ADMIN_TAG=${{ steps.vars.outputs.tag }}
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            EOL
+
+      - name: Deploy to server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd ~/gold-app-${{ steps.vars.outputs.tag }}
+            # Pull the images with the specific tag
+            docker-compose pull
+            # Apply any database migrations (optional)
+            # docker-compose run --rm gold-api dotnet ef database update
+            # Start the services
+            docker-compose up -d
+            # Make this deployment the current one (create/update symlink)
+            rm -f ~/gold-app-current
+            ln -s ~/gold-app-${{ steps.vars.outputs.tag }} ~/gold-app-current
+
+      - name: Clean old deployments
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd ~
+            # Keep only the 3 most recent deployments
+            ls -dt gold-app-* | grep -v gold-app-current | tail -n +4 | xargs rm -rf
