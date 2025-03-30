@@ -17,15 +17,7 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: "7.0.x"
-      - name: Setup SSH
-        run: |
-            mkdir -p ~/.ssh
-            echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-            chmod 600 ~/.ssh/id_rsa
-            ssh-keyscan example.com >> ~/.ssh/known_hosts
 
-      - name: Test Connection
-        run: ssh -o StrictHostKeyChecking=no user@example.com "echo Connected!"
   
 
   # Uncomment and configure deployment job based on your hosting environment
