@@ -82,7 +82,7 @@ jobs:
           labels: ${{ steps.meta-admin.outputs.labels }}
 
             # Uncomment and configure deployment job based on your hosting environment
- deploy:
+  deploy:
      needs: build-and-push-docker
      runs-on: ubuntu-latest
      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
