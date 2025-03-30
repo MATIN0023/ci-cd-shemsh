@@ -1,19 +1,16 @@
-# docker-compose.yml
 version: '3.8'
 
 services:
-  ci-tester:
-    build:
-      context: .
-      dockerfile: Dockerfile.test-ci
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock  # اجازه دسترسی به داکر هاست
-      - ./test-data:/github/workspace  # شبیه‌سازی ریپوزیتوری
+  api:
+    image: ghcr.io/your-username/gold-api:latest
+    restart: always
+    ports:
+      - "8080:80"
     environment:
-      - GITHUB_TOKEN=fake-token-for-testing
-      - SSH_HOST=test-server
-      - SSH_USERNAME=test-user
-      - SSH_KEY=fake-ssh-key
-      - DB_PASSWORD=test-db-pass
-      - LIARA_API_TOKEN=fake-liara-token
-    command: tail -f /dev/null  # نگه‌داشتن کانتینر فعال
+      - ASPNETCORE_ENVIRONMENT=Production
+
+  admin:
+    image: ghcr.io/your-username/gold-admin:latest
+    restart: always
+    ports:
+      - "8081:80"
