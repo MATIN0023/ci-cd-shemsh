@@ -74,7 +74,7 @@ jobs:
 
   # Uncomment and configure deployment job based on your hosting environment
   deploy:
-     needs: build-and-push-docker
+     
      runs-on: ubuntu-latest
      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
      steps:
