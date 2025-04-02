@@ -1,6 +1,9 @@
 # استفاده از SDK برای بیلد
 FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
 WORKDIR /app
+RUN ls -la
+RUN dotnet restore ".csproj"
+
 
 # کپی و بیلد پروژه
 COPY . . 
