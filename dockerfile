@@ -1,18 +1,11 @@
-# استفاده از SDK برای بیلد
-FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
+
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /app
-RUN ls -la
-RUN dotnet restore ".csproj"
-
-
-# کپی و بیلد پروژه
-COPY . . 
+RUN dotnet new console -n TestApp
+WORKDIR /app/TestApp
 RUN dotnet restore
 RUN dotnet publish -c Release -o /publish
-
-# استفاده از runtime برای اجرای برنامه
-FROM mcr.microsoft.com/dotnet/aspnet:7.0
+FROM mcr.microsoft.com/dotnet/runtime:8.0 AS final
 WORKDIR /app
-COPY --from=build /publish .
-EXPOSE 80
-CMD ["dotnet", "gold-api"]
+COPY --from=build /app/TestApp/publish .
+CMD ["dotnet", "TestApp.dll"]
