@@ -3,23 +3,10 @@ FROM ubuntu:24.04
 
 # نصب پیش‌نیازها
 RUN apt-get update && apt-get install -y \
-    curl \
-    git \
     docker.io \
-    kubectl \
     python3-pip \
-    && rm -rf /var/lib/apt/lists/*
-    curl \
     gnupg \
     apt-transport-https \
-    ca-certificates\
-
-# نصب Node.js برای Liara CLI
-RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
-    && apt-get install -y nodejs
-
-# نصب Liara CLI
-RUN npm install -g @liara/cli@7
 
 # نصب act (برای تست GitHub Actions)
 RUN curl -s https://raw.githubusercontent.com/nektos/act/master/install.sh | bash -s -- v0.2.49
@@ -27,9 +14,6 @@ RUN curl -s https://raw.githubusercontent.com/nektos/act/master/install.sh | bas
 RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
 RUN echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" > /etc/apt/sources.list.d/docker.list
 RUN sed -i 's|http://archive.ubuntu.com|http://mirror.your-region.example|g' /etc/apt/sources.list
-
-
-
 
 # تنظیم محیط GitHub Actions (شبیه‌سازی شده)
 ENV GITHUB_WORKSPACE=/github/workspace
