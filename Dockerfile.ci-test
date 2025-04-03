@@ -9,6 +9,10 @@ RUN apt-get update && apt-get install -y \
     kubectl \
     python3-pip \
     && rm -rf /var/lib/apt/lists/*
+    curl \
+    gnupg \
+    apt-transport-https \
+    ca-certificates\
 
 # نصب Node.js برای Liara CLI
 RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
