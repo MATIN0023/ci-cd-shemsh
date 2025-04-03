@@ -1,22 +1,33 @@
 # Dockerfile.test-ci
 FROM ubuntu:24.04
 
-# نصب پیش‌نیازها
+# تنظیم آینه مناسب (مثال برای ایران)
+RUN sed -i 's|http://archive.ubuntu.com|http://ir.archive.ubuntu.com|g' /etc/apt/sources.list
+
+# نصب پیش‌نیازهای پایه
 RUN apt-get update && apt-get install -y \
-    docker.io \
-    python3-pip \
+    curl \
     gnupg \
+    software-properties-common \
     apt-transport-https \
+    python3-pip \
+    && rm -rf /var/lib/apt/lists/*
+
+# افزودن مخزن Docker رسمی
+RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+RUN echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" > /etc/apt/sources.list.d/docker.list
+
+# نصب docker و سایر بسته‌ها
+RUN apt-get update && apt-get install -y \
+    docker-ce \
+    docker-ce-cli \
+    containerd.io \
+    && rm -rf /var/lib/apt/lists/*
 
 # نصب act (برای تست GitHub Actions)
 RUN curl -s https://raw.githubusercontent.com/nektos/act/master/install.sh | bash -s -- v0.2.49
-# افزودن مخزن Docker
-RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
-RUN echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" > /etc/apt/sources.list.d/docker.list
-RUN sed -i 's|http://archive.ubuntu.com|http://mirror.your-region.example|g' /etc/apt/sources.list
 
 # تنظیم محیط GitHub Actions (شبیه‌سازی شده)
 ENV GITHUB_WORKSPACE=/github/workspace
 RUN mkdir -p $GITHUB_WORKSPACE
-
 WORKDIR $GITHUB_WORKSPACE
