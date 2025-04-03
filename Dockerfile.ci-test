@@ -23,7 +23,7 @@ RUN curl -s https://raw.githubusercontent.com/nektos/act/master/install.sh | bas
 # کپی فایل‌های CI/CD
 COPY deploy.yml /github/workflows/deploy.yml
 COPY ci-cd.yml /github/workflows/ci-cd.yml
-COPY liara.yml /github/workflows/liara.yml
+
 
 # تنظیم محیط GitHub Actions (شبیه‌سازی شده)
 ENV GITHUB_WORKSPACE=/github/workspace
