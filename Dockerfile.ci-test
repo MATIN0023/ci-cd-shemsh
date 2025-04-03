@@ -20,9 +20,7 @@ RUN npm install -g @liara/cli@7
 # نصب act (برای تست GitHub Actions)
 RUN curl -s https://raw.githubusercontent.com/nektos/act/master/install.sh | bash -s -- v0.2.49
 
-# کپی فایل‌های CI/CD
-COPY ./deploy.yml /github/workflows/deploy.yml
-COPY ./ci-cd.yml /github/workflows/ci-cd.yml
+
 
 
 # تنظیم محیط GitHub Actions (شبیه‌سازی شده)
