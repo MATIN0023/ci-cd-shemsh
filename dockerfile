@@ -1,6 +1,7 @@
 # مرحله بیلد
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /app
+RUN sed -i 's|http://archive.ubuntu.com|http://mirror.your-region.example|g' /etc/apt/sources.list
 
 # ایجاد پروژه جدید
 RUN dotnet new console -n TestApp
