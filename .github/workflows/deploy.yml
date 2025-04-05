@@ -14,6 +14,9 @@ on:
         options:
           - staging
           - production
+      rollback_to:
+        description: "Optional: rollback to specific tag (e.g. v1.0.0)"
+        required: false
 
 jobs:
   deploy:
@@ -31,16 +34,21 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set tag version
+      - name: Determine tag version (normal or rollback)
         id: vars
         run: |
-          if [[ $GITHUB_REF == refs/tags/* ]]; then
+          if [[ -n "${{ github.event.inputs.rollback_to }}" ]]; then
+            echo "tag=${{ github.event.inputs.rollback_to }}" >> $GITHUB_OUTPUT
+            echo "rollback=true" >> $GITHUB_OUTPUT
+          elif [[ $GITHUB_REF == refs/tags/* ]]; then
             echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+            echo "rollback=false" >> $GITHUB_OUTPUT
           else
             echo "tag=latest" >> $GITHUB_OUTPUT
-          fi
+            echo "rollback=false" >> $GITHUB_OUTPUT
 
       - name: Create deployment directory on server
+        if: steps.vars.outputs.rollback != 'true'
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -50,6 +58,7 @@ jobs:
             mkdir -p ~/gold-app-${{ steps.vars.outputs.tag }}
 
       - name: Transfer Docker Compose files
+        if: steps.vars.outputs.rollback != 'true'
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -59,6 +68,7 @@ jobs:
           target: "~/gold-app-${{ steps.vars.outputs.tag }}"
 
       - name: Create .env file
+        if: steps.vars.outputs.rollback != 'true'
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -74,6 +84,7 @@ jobs:
             EOL
 
       - name: Deploy to server
+        if: steps.vars.outputs.rollback != 'true'
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -81,17 +92,27 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           script: |
             cd ~/gold-app-${{ steps.vars.outputs.tag }}
-            # Pull the images with the specific tag
             docker-compose pull
-            # Apply any database migrations (optional)
             # docker-compose run --rm gold-api dotnet ef database update
-            # Start the services
             docker-compose up -d
-            # Make this deployment the current one (create/update symlink)
+            rm -f ~/gold-app-current
+            ln -s ~/gold-app-${{ steps.vars.outputs.tag }} ~/gold-app-current
+
+      - name: Rollback to ${{ steps.vars.outputs.tag }}
+        if: steps.vars.outputs.rollback == 'true'
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd ~/gold-app-${{ steps.vars.outputs.tag }}
+            docker-compose up -d
             rm -f ~/gold-app-current
             ln -s ~/gold-app-${{ steps.vars.outputs.tag }} ~/gold-app-current
 
       - name: Clean old deployments
+        if: steps.vars.outputs.rollback != 'true'
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -99,5 +120,4 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           script: |
             cd ~
-            # Keep only the 3 most recent deployments
             ls -dt gold-app-* | grep -v gold-app-current | tail -n +4 | xargs rm -rf
