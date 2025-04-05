@@ -1,15 +1,15 @@
-using Microsoft.AspNetCore.Mvc;
+var builder = WebApplication.CreateBuilder(args);
 
-namespace GoldApp.Controllers
-{
-    [ApiController]
-    [Route("[controller]")]
-    public class HomeController : ControllerBase
-    {
-        [HttpGet]
-        public IActionResult Get()
-        {
-            return Ok("🎉 API is working!");
-        }
-    }
-}
+// Add services to the container.
+builder.Services.AddControllers();
+
+var app = builder.Build();
+
+// Configure the HTTP request pipeline.
+app.UseRouting();
+
+app.UseAuthorization();
+
+app.MapControllers();
+
+app.Run();
