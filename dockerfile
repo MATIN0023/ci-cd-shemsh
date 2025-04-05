@@ -4,9 +4,9 @@ WORKDIR /app
 
 
 # ایجاد پروژه جدید
-RUN dotnet new console -n TestApp
-
-WORKDIR /app/TestApp
+dotnet new sln -n GoldApp
+dotnet sln add src/GoldApp/GoldApp.csproj
+WORKDIR src/GoldApp/
 
 # بازیابی وابستگی‌ها و بیلد پروژه
 RUN dotnet restore
